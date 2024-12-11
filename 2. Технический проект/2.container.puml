@@ -1,0 +1,73 @@
+@startuml
+title "Диаграмма контейнеров системы поиска и бронирования туров"
+
+!define C4P https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master
+!$ICONURL = "https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v3.0.0/icons"
+!include $ICONURL/devicons/react.puml
+!include $ICONURL/devicons/postgresql.puml
+!include $ICONURL/devicons/react.puml
+!includeurl C4P/C4_Container.puml
+
+Person(tourist, "Турист", "Просматривает туры, бронирует билеты на туры, оплачивает билеты, стаивит рейтинги и отзывы")
+Person(tourOperator, "Тур оператор", "Управляет турами, отвечает на отзывы туристов, собирает отчетность по турам")
+Person(admin, "Администратор", "Модерация туров, Блокировка и разблокировка аккаунтов")
+
+System_Boundary(delivery_service, "Сервис туров") {
+    Container(web_app, "Мультистраничное Web-приложение", "React", "", $sprite="react")
+    Container(mobile_app, "Мобильное приложение", "React Native", "", $sprite="react")    
+    Container(booking_service, "Сервис бронирования туров", "С#, ASP NET CORE", "")
+    Container(user_service, "Сервис пользователей", "С#, ASP NET CORE", "")
+    Container(tour_service, "Сервис туров", "С#, ASP NET CORE", "")    
+    Container(auth_service, "Сервис для авторизациии аутентификации")
+    Container(reporing_service, "Сервис для отчётов")
+    Container(payment_service, "Сервис для платежей")
+    Container(notification_service, "Сервисе уведомлений по почте")
+    Container(api_gateway, "Шлюз для управления запросами от клиентов к серверам", "", "")
+    ContainerDb(booking_db, "База данных броней", "PostgreSQL")
+    ContainerDb(auth_db, "База данных авторизациий", "PostgreSQL")
+    ContainerDb(user_db, "База данных пользователей", "PostgreSQL")
+    ContainerDb(tour_db, "База данных туров", "PostgreSQL")
+    ContainerDb(tour_redis_db, "Redis туров", "Redis")
+    ContainerDb(reporting_db, "База данных отчётов", "PostgreSQL")    
+    ContainerDb(notification_db, "База данных уведомлений", "PostgreSQL")
+    Container(message_broker, "Событийная шина", "RabbitMQ")
+}
+System_Ext(email, "Email сервис", "отправка уведомлений")
+System_Ext(paymentSystem, "Платёжная система", "Предоставление возможности оплаты и рекуррентных платежей")
+
+Rel(web_app, api_gateway, "API вызовы", "REST API")
+Rel(mobile_app, api_gateway, "API вызовы", "REST API")
+Rel(api_gateway, booking_service, "API вызовы", "REST API")
+Rel(api_gateway, user_service, "API вызовы", "REST API")
+Rel(api_gateway, tour_service, "API вызовы", "REST API")
+Rel(api_gateway, auth_service, "API вызовы", "REST API")
+Rel(api_gateway, reporing_service, "API вызовы", "REST API")
+Rel(api_gateway, notification_service, "API вызовы", "REST API")
+
+Rel(booking_service, booking_db, "Чтение/Запись", "SQL")
+Rel(auth_service, auth_db, "Чтение/Запись", "SQL")
+Rel(user_service, user_db, "Чтение/Запись", "SQL")
+Rel(tour_service, tour_db, "Чтение/Запись", "SQL")
+Rel(tour_service, tour_redis_db, "Кеширование", "")
+Rel(reporing_service, reporting_db, "Чтение", "SQL")
+Rel(notification_service, notification_db, "Чтение/Запись", "SQL")
+
+Rel(reporing_service, tour_service, "Чтение данных для отчётов", "REST API")
+Rel(reporing_service, booking_service, "Чтение данных для отчётов", "REST API")
+Rel(user_service, message_broker, "Публикация событий: Операция над учетными данными пользователя и раз/блокировка пользователей", "")
+Rel(tour_service, message_broker, "Публикация событий: Операция над туром и модерация туров", "")
+Rel(booking_service, message_broker, "Публикация событий: Бронь создана или бронь истекла", "")
+Rel(booking_service, payment_service, "Оплата брони", "")
+Rel(notification_service, message_broker, "", "")
+
+Rel(notification_service, email, "API вызов/Получение ответа", "REST API")
+Rel(payment_service, paymentSystem, "API вызов/Получение статуса оплаты", "REST API")
+
+Rel(tourist, web_app, "Посещает", "HTTP")
+Rel(tourist, mobile_app, "Посещает", "HTTP")
+
+Rel(tourOperator, web_app, "Посещает", "HTTP")
+Rel(tourOperator, mobile_app, "Посещает", "HTTP")
+Rel(admin, web_app, "Посещает", "HTTP")
+
+@enduml

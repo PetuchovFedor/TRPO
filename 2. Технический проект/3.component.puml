@@ -1,0 +1,45 @@
+@startuml API. Диаграмма компонентов
+title "C4. Компоненты"
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+!$ICONURL = "https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v3.0.0/icons"
+!include $ICONURL/common.puml
+!include $ICONURL/devicons/react.puml
+!include $ICONURL/devicons/php.puml
+!include $ICONURL/devicons2/sqlite.puml
+
+Component(bookingService, "Микросервис бронирования", "С#, ASP NET CORE")
+
+Component(web_app, "Мультистраничное Web-приложение", "React", "", $sprite="react")
+Component(mobile_app, "Мобильное приложение", "React Native", "", $sprite="react") 
+Component(api_gateway, "Шлюз для управления запросами от клиентов к серверам", "React Native", ) 
+
+Rel(web_app, api_gateway, "Запросы на бронирование и оплату")
+Rel(mobile_app, api_gateway, "Запросы на бронирование и оплату")
+Rel(api_gateway, bookingService, "", "")
+System_Boundary(libAcc, "Сервис бронирования") {
+
+    Component(BookingController, "BookingController", "С#", "Управление бронированием: создание брони и отмена брони")   
+    Component(PaymentController, "PaymentController", "С#", "Оплата и отмена билета")   
+
+    Rel(bookingService, BookingController, "")
+    Rel(bookingService, PaymentController, "")
+    Component(BookingService, "BookingService", "С#", "Логика по управлению бронированием")   
+    Component(PaymentService, "PaymentService", "С#", "Логика по управлению билетот, оплата брони")   
+    Rel(BookingController, BookingService, "")
+    Rel(PaymentController, PaymentService, "")
+    Component(BookingRepository, "BookingRepository", "", "Управляет записями броней в базе данных")
+    Component(PaymentRepository, "PaymentRepository", "", "Управляет записями операций в базе данных")   
+    Rel(BookingService, BookingRepository, "")
+    Rel(PaymentService, PaymentRepository, "")
+}
+Component(db, "DB", "PostgreSQL")
+Rel(BookingRepository, db, "Чтение/Запись", "SQL")
+Rel(PaymentRepository, db, "Чтение/Запись", "SQL")
+Component(MessageBroker, "Событийная шина", "RabbitMQ")
+Rel(BookingService, MessageBroker, "Публикация события бронь создана")
+Component(paymentService, "Сервис для оплаты", "C#")
+Rel(PaymentService, paymentService, "Оплата и отмена билета")
+
+
+@enduml

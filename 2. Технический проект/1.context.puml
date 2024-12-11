@@ -1,0 +1,22 @@
+@startuml Диаграмма контекста
+title "Контекстная диаграмма системы поиска и бронирования туров"
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+!$ICONURL = "https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/v3.0.0/icons"
+!include $ICONURL/common.puml
+
+Person(tourist, "Турист", "Просматривает туры, бронирует билеты на туры, оплачивает билеты, стаивит рейтинги и отзывы")
+Person(tourOperator, "Тур оператор", "Управляет турами, отвечает на отзывы туристов, собирает отчетность по турам")
+Person(admin, "Администратор", "Модерация туров, Блокировка и разблокировка аккаунтов")
+
+System(tourSystem, "Система поиска и бронирования туров")
+tourist ---> tourSystem
+tourOperator ---> tourSystem
+admin ---> tourSystem
+
+System_Ext(email, "Email сервис", "отправка уведомлений")
+System_Ext(paymentSystem, "Платёжная система", "Предоставление возможности оплаты и рекуррентных платежей")
+
+tourSystem --> email
+tourSystem --> paymentSystem
+@enduml
