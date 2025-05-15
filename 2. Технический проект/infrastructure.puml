@@ -1,0 +1,73 @@
+@startuml
+!define C4P https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master
+!includeurl C4P/C4_Container.puml
+
+title C4 Infrastructure Diagram - Система поиска и бронирования туров
+
+package "Облачная платформа" as cloud {
+    Container(nginx, "Nginx", "Nginx", "Обратный прокси и балансировщик нагрузки")
+
+    package "Kubernetes Cluster" as k8s_cluster {
+        package "Booking Pod" as booking_pod {
+            Container(booking_service, "Booking Service", "C#, ASP NET CORE", "Сервис бронирования туров")
+        }
+
+        package "User Account Pod" as user_account_pod {
+            Container(user_service, "User Account Service", "C#, ASP NET CORE", "Сервис управления пользователями и их учетными записями")
+        }
+
+        package "Tour Pod" as tour_pod {
+            Container(tour_service, "Tour Service", "C#, ASP NET CORE", "Сервис по управлению турами")
+        }
+
+        package "Auth Pod" as auth_pod {
+            Container(auth_service, "Auth Service", "C#, ASP NET CORE", "Сервис для авторизации и аутенфикации")
+        }
+
+        package "Reporting Pod" as reporting_pod {
+            Container(reporing_service, "Reporting Service", "C#, ASP NET CORE", "Сервис генерации отчётов и билетов")
+        }
+
+        package "Payment Pod" as payment_pod {
+            Container(payment_service, "Payment Service", "C#, ASP NET CORE", "Сервис интеграции с платежными ситсемами")
+        }
+
+        package "Notification Pod" as notification_pod {
+            Container(notification_service, "Payment Service", "C#, ASP NET CORE", "Сервис оповещений по почте")
+        }
+
+
+    }
+    Container(RabbitMQ, "Message Broker", "RabbitMQ", "Асинхронная обработка событий")
+
+}
+
+    package "Cache cluster" as cache_cluster {
+        Container(Redis, "Cache tour", "Redis", "База данных для кеширования")
+    }
+
+    package "Database cluster" as db_cluster {
+        package "Region 1" as region1 {
+            Container(db_r1_master, "PostgreSQL Master", "PostgreSQL", "Основная база данных для региона 1")
+            Container(db_r1_replica, "PostgreSQL Replica", "PostgreSQL", "Реплика базы данных для региона 1")
+        }
+
+        package "Region n" as regionn {
+            Container(db_rn_master, "PostgreSQL Master", "PostgreSQL", "Основная база данных для региона n")
+            Container(db_rn_replica, "PostgreSQL Replica", "PostgreSQL", "Реплика базы данных для региона n")
+        }
+    }
+
+    Rel_D(db_r1_master, db_r1_replica, "Репликация", "Streaming")
+    Rel_D(db_rn_master, db_rn_replica, "Репликация", "Streaming")
+    Rel(tour_pod,Redis, "Чтение/Запись данных", "JDBC")    
+    Rel(k8s_cluster, db_cluster, "Чтение/Запись данных", "JDBC")
+    Rel(nginx, k8s_cluster, "Проксирование запросов", "HTTP")
+    Rel(k8s_cluster, db_cluster, "Чтение/Запись данных", "JDBC")
+    Rel(k8s_cluster, RabbitMQ, "Публикация событий", "RabbitMQ Producer API")       
+
+    System_Ext(payment_system, "Платежная система", "Payment API")
+    System_Ext(notification_system, "Система уведомлений по почте", "Email API")
+    Rel(notification_service, notification_system, "Отправка уведомлений по почте", "REST API")
+    Rel(payment_service, payment_system, "Обработка платежей", "REST API")
+@enduml

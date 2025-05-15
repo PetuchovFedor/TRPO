@@ -8,38 +8,40 @@ title "C4. Компоненты"
 !include $ICONURL/devicons/php.puml
 !include $ICONURL/devicons2/sqlite.puml
 
-Component(bookingService, "Микросервис бронирования", "С#, ASP NET CORE")
+' Component(bookingService, "Микросервис бронирования", "С#, ASP NET CORE")
 
 Component(web_app, "Мультистраничное Web-приложение", "React", "", $sprite="react")
 Component(mobile_app, "Мобильное приложение", "React Native", "", $sprite="react") 
 Component(api_gateway, "Шлюз для управления запросами от клиентов к серверам", "React Native", ) 
 
-Rel(web_app, api_gateway, "Запросы на бронирование и оплату")
-Rel(mobile_app, api_gateway, "Запросы на бронирование и оплату")
-Rel(api_gateway, bookingService, "", "")
+Rel(web_app, api_gateway, "Запросы на бронирование")
+Rel(mobile_app, api_gateway, "Запросы на бронирование")
+' Rel(api_gateway, bookingService, "", "")
 System_Boundary(libAcc, "Сервис бронирования") {
 
     Component(BookingController, "BookingController", "С#", "Управление бронированием: создание брони и отмена брони")   
-    Component(PaymentController, "PaymentController", "С#", "Оплата и отмена билета")   
+    ' Component(PaymentController, "PaymentController", "С#", "Оплата и отмена билета")   
 
-    Rel(bookingService, BookingController, "")
-    Rel(bookingService, PaymentController, "")
+    Rel(api_gateway, BookingController, "")
+    ' Rel(bookingService, PaymentController, "")
     Component(BookingService, "BookingService", "С#", "Логика по управлению бронированием")   
-    Component(PaymentService, "PaymentService", "С#", "Логика по управлению билетот, оплата брони")   
+    Component(BookingEventPublisher, "BookingEventPublicher", "C#", "Управляет событиями")
+    ' Component(PaymentService, "PaymentService", "С#", "Логика по управлению билетот, оплата брони")   
     Rel(BookingController, BookingService, "")
-    Rel(PaymentController, PaymentService, "")
-    Component(BookingRepository, "BookingRepository", "", "Управляет записями броней в базе данных")
-    Component(PaymentRepository, "PaymentRepository", "", "Управляет записями операций в базе данных")   
+    ' Rel(PaymentController, PaymentService, "")
+    Component(BookingRepository, "BookingRepository", "С#", "Управляет записями броней в базе данных")
+    ' Component(PaymentRepository, "PaymentRepository", "", "Управляет записями операций в базе данных")   
     Rel(BookingService, BookingRepository, "")
-    Rel(PaymentService, PaymentRepository, "")
+    Rel(BookingService, BookingEventPublisher, "")
+    ' Rel(PaymentService, PaymentRepository, "")
 }
 Component(db, "DB", "PostgreSQL")
 Rel(BookingRepository, db, "Чтение/Запись", "SQL")
-Rel(PaymentRepository, db, "Чтение/Запись", "SQL")
+' Rel(PaymentRepository, db, "Чтение/Запись", "SQL")
 Component(MessageBroker, "Событийная шина", "RabbitMQ")
-Rel(BookingService, MessageBroker, "Публикация события бронь создана")
-Component(paymentService, "Сервис для оплаты", "C#")
-Rel(PaymentService, paymentService, "Оплата и отмена билета")
+Rel(BookingEventPublisher, MessageBroker, "Публикация события бронь создана")
+' Component(paymentService, "Сервис для оплаты", "C#")
+' Rel(PaymentService, paymentService, "Оплата и отмена билета")
 
 
 @enduml
